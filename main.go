@@ -58,6 +58,7 @@ func main() {
 func buildDSN(opts Opts) string {
 	cfg := mysql.NewConfig()
 	cfg.Addr = fmt.Sprintf("%s:%d", opts.Host, opts.Port)
+	cfg.Net = "tcp"
 	cfg.User = opts.User
 	cfg.Passwd = opts.Password
 	return cfg.FormatDSN()
