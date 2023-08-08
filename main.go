@@ -29,6 +29,7 @@ type Opts struct {
 func main() {
 	var opts Opts
 	parser := flags.NewParser(&opts, flags.None)
+	parser.Usage = "[options]"
 	if _, err := parser.Parse(); err != nil {
 		log.Fatal(err)
 	}
