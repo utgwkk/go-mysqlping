@@ -70,8 +70,8 @@ func ping(ctx context.Context, opts Opts, db *sql.DB) error {
 	go func() {
 		defer wg.Done()
 
-		ticker := Interval(1 * time.Second)
-		defer close(ticker)
+		ticker, finish := Interval(1 * time.Second)
+		defer finish()
 
 	LOOP:
 		for {
