@@ -69,39 +69,29 @@ func ping(ctx context.Context, opts Opts, db *sql.DB) error {
 
 	go func() {
 		defer wg.Done()
-		pingWorker(ctx, db)
+
+		ticker := Interval(1 * time.Second)
+		defer close(ticker)
+
+	LOOP:
+		for {
+			select {
+			case <-ctx.Done():
+				break LOOP
+			case <-ticker:
+				if _, err := db.ExecContext(ctx, "SELECT 1"); err != nil {
+					log.Println(err)
+					continue
+				}
+
+				break LOOP
+			}
+		}
 	}()
 
 	wg.Wait()
 
 	if err := ctx.Err(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func pingWorker(ctx context.Context, db *sql.DB) {
-	ticker := Interval(1 * time.Second)
-	defer close(ticker)
-
-LOOP:
-	for {
-		select {
-		case <-ctx.Done():
-			break LOOP
-		case <-ticker:
-			if err := doPing(ctx, db); err != nil {
-				log.Println(err)
-				continue
-			}
-
-			break LOOP
-		}
-	}
-}
-
-func doPing(ctx context.Context, db *sql.DB) error {
-	if _, err := db.ExecContext(ctx, "SELECT 1"); err != nil {
 		return err
 	}
 	return nil
