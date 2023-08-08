@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jessevdk/go-flags"
@@ -48,11 +50,50 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
-	if _, err := db.ExecContext(ctx, "SELECT 1"); err != nil {
+	if err := ping(ctx, db); err != nil {
 		log.Fatal(err)
 	}
+
 	log.Println("Ping successful")
+}
+
+func ping(ctx context.Context, db *sql.DB) error {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		pingWorker(ctx, db)
+	}()
+
+	wg.Wait()
+
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func pingWorker(ctx context.Context, db *sql.DB) {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+LOOP:
+	for {
+		select {
+		case <-ctx.Done():
+			break LOOP
+		case <-ticker.C:
+			if _, err := db.ExecContext(ctx, "SELECT 1"); err != nil {
+				log.Println(err)
+				continue
+			}
+
+			break LOOP
+		}
+	}
 }
 
 func buildDSN(opts Opts) string {
