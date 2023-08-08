@@ -61,11 +61,11 @@ func main() {
 }
 
 func ping(ctx context.Context, opts Opts, db *sql.DB) error {
-	var wg sync.WaitGroup
-	wg.Add(1)
-
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(time.Second)*int64(opts.Timeout)))
 	defer cancel()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
