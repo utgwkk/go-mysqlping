@@ -81,28 +81,15 @@ func ping(ctx context.Context, opts Opts, db *sql.DB) error {
 }
 
 func pingWorker(ctx context.Context, db *sql.DB) {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
-	initial := make(chan struct{})
-	go func() {
-		initial <- struct{}{}
-	}()
-	defer close(initial)
+	ticker := Interval(1 * time.Second)
+	defer close(ticker)
 
 LOOP:
 	for {
 		select {
 		case <-ctx.Done():
 			break LOOP
-		case <-ticker.C:
-			if err := doPing(ctx, db); err != nil {
-				log.Println(err)
-				continue
-			}
-
-			break LOOP
-		case <-initial:
+		case <-ticker:
 			if err := doPing(ctx, db); err != nil {
 				log.Println(err)
 				continue
