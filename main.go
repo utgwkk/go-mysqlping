@@ -21,6 +21,7 @@ type Opts struct {
 	Password string `short:"p" long:"password" description:"MySQL user password" value-name:"password"`
 	Host     string `short:"h" long:"host" description:"Host to connect to the MySQL server" value-name:"host_name" default:"127.0.0.1"`
 	Port     uint   `short:"P" long:"port" description:"Port used for the connection" value-name:"port_num" default:"3306"`
+	Timeout  uint   `long:"timeout" description:"Timeout seconds" value-name:"timeout" default:"60"`
 	Help     bool   `long:"help" description:"Show this help"`
 	Version  bool   `long:"version" description:"Show this version"`
 }
@@ -52,16 +53,19 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := ping(ctx, db); err != nil {
+	if err := ping(ctx, opts, db); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Println("Ping successful")
 }
 
-func ping(ctx context.Context, db *sql.DB) error {
+func ping(ctx context.Context, opts Opts, db *sql.DB) error {
 	var wg sync.WaitGroup
 	wg.Add(1)
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(time.Second)*int64(opts.Timeout)))
+	defer cancel()
 
 	go func() {
 		defer wg.Done()
@@ -80,13 +84,26 @@ func pingWorker(ctx context.Context, db *sql.DB) {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
+	initial := make(chan struct{})
+	go func() {
+		initial <- struct{}{}
+	}()
+	defer close(initial)
+
 LOOP:
 	for {
 		select {
 		case <-ctx.Done():
 			break LOOP
 		case <-ticker.C:
-			if _, err := db.ExecContext(ctx, "SELECT 1"); err != nil {
+			if err := doPing(ctx, db); err != nil {
+				log.Println(err)
+				continue
+			}
+
+			break LOOP
+		case <-initial:
+			if err := doPing(ctx, db); err != nil {
 				log.Println(err)
 				continue
 			}
@@ -94,6 +111,13 @@ LOOP:
 			break LOOP
 		}
 	}
+}
+
+func doPing(ctx context.Context, db *sql.DB) error {
+	if _, err := db.ExecContext(ctx, "SELECT 1"); err != nil {
+		return err
+	}
+	return nil
 }
 
 func buildDSN(opts Opts) string {
