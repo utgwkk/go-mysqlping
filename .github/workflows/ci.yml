@@ -20,7 +20,7 @@ jobs:
           MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
           cache: false
       - name: Ping MySQL
