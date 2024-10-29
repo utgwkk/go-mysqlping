@@ -71,15 +71,15 @@ func ping(ctx context.Context, opts Opts, db *sql.DB) error {
 	go func() {
 		defer wg.Done()
 
-		ticker, finish := Interval(1 * time.Second)
-		defer finish()
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
 
 	LOOP:
 		for {
 			select {
 			case <-ctx.Done():
 				break LOOP
-			case <-ticker:
+			case <-ticker.C:
 				if _, err := db.ExecContext(ctx, "SELECT 1"); err != nil {
 					log.Println(err)
 					continue
