@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -65,11 +64,10 @@ func ping(ctx context.Context, opts Opts, db *sql.DB) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(time.Second)*int64(opts.Timeout)))
 	defer cancel()
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	done := make(chan struct{})
 
 	go func() {
-		defer wg.Done()
+		defer close(done)
 
 		ticker := time.NewTicker(time.Second)
 		defer ticker.Stop()
@@ -90,7 +88,7 @@ func ping(ctx context.Context, opts Opts, db *sql.DB) error {
 		}
 	}()
 
-	wg.Wait()
+	<-done
 
 	if err := ctx.Err(); err != nil {
 		return err
