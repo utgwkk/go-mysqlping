@@ -21,5 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
+        with:
+          cache: false
       - name: Ping MySQL
         run: go run . -uroot -hlocalhost -P${{ job.services.db.ports[3306] }} --timeout=60
