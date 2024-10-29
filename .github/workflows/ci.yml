@@ -14,11 +14,11 @@ jobs:
       db:
         image: mysql:8
         ports:
-          - 3306:3306
+          - 3306/tcp
         env:
           MYSQL_DATABASE: testdb
           MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
-      - run: go run . -uroot -hlocalhost -P3306 --timeout=60
+      - run: go run . -uroot -hlocalhost -P${{ job.services.db.ports[3306] }} --timeout=60
