@@ -29,7 +29,7 @@ checksum:
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 changelog:
-  use: github
+  use: github-native
   sort: asc
   filters:
     exclude:
