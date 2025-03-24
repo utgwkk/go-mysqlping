@@ -3,7 +3,7 @@ module github.com/utgwkk/go-mysqlping
 go 1.22.0
 
 require (
-	github.com/go-sql-driver/mysql v1.9.0
+	github.com/go-sql-driver/mysql v1.9.1
 	github.com/jessevdk/go-flags v1.6.1
 )
 
